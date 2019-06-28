@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script>
+function displayData(){
+    document.getElementById('inventoryList').innerHTML = '<p>Inventory Listing</p>';
+
+    fetch('http://localhost:8080/product')
+    .then( response => response.json())
+    .then( obj => obj._embedded.product)
+    .then( products => products.map( product => `<p>name: ${product.name},
+                                                    quantity: ${product.quantity},
+                                                    category: ${product.category},
+                                                    subCategory: ${product.subCategory}
+                                                    </p>
+                                                    `))
+    .then( rtn => rtn.map( p =>
+            document.getElementById('inventoryList').innerHTML += p
+        ))
+    .catch( err => console.log('there is error fetching products'));
+
+
+}
+
+function displayForm() {
+
+    document.getElementById('displayForm').innerHTML = '';
+    var tags = '';
+
+    fetch('http://localhost:8080/profile/product')
+    .then( response => response.json() )
+    .then( obj => {
+                    tags += '<form id="inventoryForm" action="" onSubmit="submitForm();">';
+                    tags += 'Name: <input type ="text" name="name"></br>';
+                    tags += 'quantity: <input type ="text" name="quantity"></br>';
+                    return obj;
+            } )
+    .then( obj => obj.alps.descriptor[0].descriptor)
+    .then( obj => obj.forEach( item => {
+                    if (item.name == "category"){
+                        tags += 'Category: <select name="category"></br>' ;
+                        item.doc.value.split(",").forEach( c => tags += `<option value="${c.trim()}">${c.trim()}</option> </br>` ) ;
+                        tags += '</select></br>' ;
+                    } else if (item.name == "subCategory"){
+                        tags += 'SubCategory: <select name="subCategory"></br>' ;
+                        item.doc.value.split(",").forEach( c => tags += `<option value="${c.trim()}">${c.trim()}</option> </br>` );
+                        tags += '</select></br>' ;
+                    }}
+                    ) )
+    .then( () => {tags += '<input type="submit" value="Submit"></form>'} )
+    .then( () => {document.getElementById('displayForm').innerHTML = tags;} )
+    .catch( err => console.log('error in getting categories'));
+
+}
+
+function submitForm(){
+    var form = document.getElementById('inventoryForm');
+    var data = {};
+    data.name = form.name.value;
+    data.quantity = form.quantity.value;
+    data.category = form.category.value;
+    data.subCategory = form.subCategory.value;
+
+
+    console.log(`json: ${JSON.stringify(data)}`);
+
+    fetch('http://localhost:8080/product', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify(data) } )
+    .then( response => response.json() )
+    .then( data => console.log(`response: ${response}`) );
+
+}
+</script>
+</head>
+<body>
+<h1>Inventory application</h1>
+<div id=inventoryList></div>
+<div id=displayForm></div>
+
+<button type="button" onclick="displayData()">Product Listing</button>
+<button type="button" onclick="displayForm()">Product Form</button>
+
+</body>
+</html>
